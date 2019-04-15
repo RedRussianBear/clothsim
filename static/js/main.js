@@ -2,8 +2,8 @@ window.onload = function () {
 
     const FPS = 120;
 
-    const k = 120;
-    const n = 0.25;
+    const k = 130;
+    const n = 0.4;
     const m = .5;
     const g = 2;
     const h = 1 / (FPS);
@@ -34,14 +34,27 @@ window.onload = function () {
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 200);
 
-    const light = new THREE.SpotLight(0xffffff, 1);
-    light.position.x = 5;
-    light.position.y = 5;
-    light.position.z = 5;
-    scene.add(light);
+    const light1 = new THREE.SpotLight(0xffffff, 1);
+    light1.position.x = 5;
+    light1.position.y = 5;
+    light1.position.z = 5;
+    light1.castShadow = true;
+    light1.shadow.mapSize.x = 4096;
+    light1.shadow.mapSize.y = 4096;
+    scene.add(light1);
+
+    const light2 = new THREE.SpotLight(0xffffff, 1);
+    light2.position.x = -5;
+    light2.position.y = 5;
+    light2.position.z = -5;
+    light2.castShadow = true;
+    light2.shadow.mapSize.x = 4096;
+    light2.shadow.mapSize.y = 4096;
+    scene.add(light2);
 
     const renderer = new THREE.WebGLRenderer();
     renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
     document.body.appendChild(renderer.domElement);
 
     const geometry = new THREE.Geometry();
@@ -61,11 +74,21 @@ window.onload = function () {
     geometry.computeFaceNormals();
     geometry.computeVertexNormals();
 
-    const material = new THREE.MeshStandardMaterial({'color': 0xff0000, side: THREE.DoubleSide});
-    const cube = new THREE.Mesh(geometry, material);
-    scene.add(cube);
+    const material = new THREE.MeshStandardMaterial({'color': 0xff0000, 'side': THREE.DoubleSide});
+    const cloth = new THREE.Mesh(geometry, material);
+    cloth.castShadow = true;
+    // cloth.receiveShadow = true;
+    scene.add(cloth);
 
     camera.position.z = 8;
+
+    const planeGeometry = new THREE.PlaneGeometry(10, 10);
+    const planeMaterial = new THREE.MeshStandardMaterial({color: 0xffff00, side: THREE.DoubleSide});
+    const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+    plane.rotation.x = -Math.PI / 2;
+    plane.translateZ(-5);
+    plane.receiveShadow = true;
+    scene.add(plane);
 
     function accel(i, j, pos) {
         let vec = new THREE.Vector3(0, 0, 0);
@@ -122,11 +145,11 @@ window.onload = function () {
                 new_points[i][j].addScaledVector(k2, 1 / 3);
                 new_points[i][j].addScaledVector(k3, 1 / 6);
 
-                new_points[i][j].y = Math.max(new_points[i][j].y, -3);
+                new_points[i][j].y = Math.max(new_points[i][j].y, -5);
             }
         }
 
-        // cube.geometry.__dirtyVertices = true;
+        // cloth.geometry.__dirtyVertices = true;
 
 
         for (let i = 0; i < N; i++) {
@@ -139,15 +162,15 @@ window.onload = function () {
                 points[i][j].y = new_points[i][j].y;
                 points[i][j].z = new_points[i][j].z;
 
-                cube.geometry.vertices[i * K + j] = points[i][j];
+                cloth.geometry.vertices[i * K + j] = points[i][j];
                 geometry.verticesNeedUpdate = true;
             }
         }
 
-        camera.position.z = 8 * Math.abs(Math.cos((new Date().getTime()) / 15000 * 2 * Math.PI));
-        camera.position.x = 8 * Math.sin((new Date().getTime()) / 15000 * 2 * Math.PI);
+        camera.position.z = 8 * Math.cos((new Date().getTime()) / 20000 * 2 * Math.PI);
+        camera.position.x = 8 * Math.sin((new Date().getTime()) / 20000 * 2 * Math.PI);
         camera.up = new THREE.Vector3(0, 1, 0);
-        camera.lookAt(new THREE.Vector3(0, 0, 0));
+        camera.lookAt(new THREE.Vector3(0, -.5, 0));
 
         renderer.render(scene, camera);
         setTimeout(animate, 1000 / FPS);
