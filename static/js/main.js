@@ -2,34 +2,48 @@ window.onload = function () {
 
     const FPS = 120;
 
+    const N = 30;
+    const K = 60;
+
     const k = 130;
-    const n = 0.4;
+    const n = 0.2 * (20 / N);
     const m = .5;
     const g = 2;
     const h = 1 / (FPS);
     const r = 2;
-
-    const N = 15;
-    const K = 30;
 
     let points = [];
     let new_points = [];
     let velocity = [];
     let new_velocity = [];
 
-    for (let i = 0; i < N; i++) {
-        points.push([]);
-        new_points.push([]);
-        velocity.push([]);
-        new_velocity.push([]);
-        for (let j = 0; j < K; j++) {
-            points[i].push(new THREE.Vector3(j / 5 - 3, i / 5 - 1.5, .2 * Math.cos(j / (N / 6) * 2 * Math.PI)));
-            new_points[i].push(new THREE.Vector3(j / 5 - 3, i / 5 - 1.5, .2 * Math.cos(j / (N / 6) * 2 * Math.PI)));
-            velocity[i].push(new THREE.Vector3(0, 0, 0));
-            new_velocity[i].push(new THREE.Vector3(0, 0, 0));
+    function reset(side) {
+        points = [];
+        new_points = [];
+        velocity = [];
+        new_velocity = [];
+        for (let i = 0; i < N; i++) {
+            points.push([]);
+            new_points.push([]);
+            velocity.push([]);
+            new_velocity.push([]);
+            for (let j = 0; j < K; j++) {
+                if (side) {
+                    points[i].push(new THREE.Vector3(j * (6 / K) - 3, .2 * Math.cos(j / (K / 6) * 2 * Math.PI), i * (3 / N) - 1.5));
+                    new_points[i].push(new THREE.Vector3(j * (6 / K) - 3, .2 * Math.cos(j / (K / 6) * 2 * Math.PI), i * (3 / N) - 1.5));
+                    velocity[i].push(new THREE.Vector3(0, 0, 0));
+                    new_velocity[i].push(new THREE.Vector3(0, 0, 0));
+                } else {
+                    points[i].push(new THREE.Vector3(j * (6 / K) - 3, i * (3 / N) - 1.5, .2 * Math.cos(j / (K / 6) * 2 * Math.PI)));
+                    new_points[i].push(new THREE.Vector3(j * (6 / K) - 3, i * (3 / N) - 1.5, .2 * Math.cos(j / (K / 6) * 2 * Math.PI)));
+                    velocity[i].push(new THREE.Vector3(0, 0, 0));
+                    new_velocity[i].push(new THREE.Vector3(0, 0, 0));
+                }
+            }
         }
     }
 
+    reset(Math.ceil(new Date().getTime()/1000) % 2 === 0);
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 200);
@@ -67,12 +81,8 @@ window.onload = function () {
         for (let j = 0; j < K - 1; j++) {
             geometry.faces.push(new THREE.Face3(i * K + j, i * K + j + 1, (i + 1) * K + j));
             geometry.faces.push(new THREE.Face3(i * K + j + 1, (i + 1) * K + j + 1, (i + 1) * K + j));
-            // geometry.faces.push(new THREE.Face3(i * K + j, (i + 1) * K + j, i * K + j + 1));
-            // geometry.faces.push(new THREE.Face3(i * K + j + 1, (i + 1) * K + j, (i + 1) * K + j + 1));
         }
 
-    geometry.computeFaceNormals();
-    geometry.computeVertexNormals();
 
     const material = new THREE.MeshStandardMaterial({'color': 0xff0000, 'side': THREE.DoubleSide});
     const cloth = new THREE.Mesh(geometry, material);
@@ -145,12 +155,12 @@ window.onload = function () {
                 new_points[i][j].addScaledVector(k2, 1 / 3);
                 new_points[i][j].addScaledVector(k3, 1 / 6);
 
-                new_points[i][j].y = Math.max(new_points[i][j].y, -5);
+                new_points[i][j].y = Math.max(new_points[i][j].y, -4.98);
+                if (new_points[i][j].y <= -4.98) new_velocity[i][j].y = 0;
             }
         }
 
         // cloth.geometry.__dirtyVertices = true;
-
 
         for (let i = 0; i < N; i++) {
             for (let j = 0; j < K; j++) {
@@ -167,10 +177,13 @@ window.onload = function () {
             }
         }
 
-        camera.position.z = 8 * Math.cos((new Date().getTime()) / 20000 * 2 * Math.PI);
-        camera.position.x = 8 * Math.sin((new Date().getTime()) / 20000 * 2 * Math.PI);
+        camera.position.z = 8 * Math.cos((new Date().getTime()) / 30000 * 2 * Math.PI);
+        camera.position.x = 8 * Math.sin((new Date().getTime()) / 30000 * 2 * Math.PI);
         camera.up = new THREE.Vector3(0, 1, 0);
         camera.lookAt(new THREE.Vector3(0, -.5, 0));
+
+        geometry.computeFaceNormals();
+        geometry.computeVertexNormals();
 
         renderer.render(scene, camera);
         setTimeout(animate, 1000 / FPS);
